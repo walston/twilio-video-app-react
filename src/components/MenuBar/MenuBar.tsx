@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useState, useEffect } from 'react';
+import React, { ChangeEvent, FormEvent, useState, useEffect, useRef } from 'react';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
 import AppBar from '@material-ui/core/AppBar';
@@ -10,7 +10,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Menu from './Menu/Menu';
 
 import { useAppState } from '../../state';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import useRoomState from '../../hooks/useRoomState/useRoomState';
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext';
 import { Typography } from '@material-ui/core';
@@ -69,6 +69,10 @@ export default function MenuBar() {
   const [name, setName] = useState<string>(user?.displayName || '');
   const [roomName, setRoomName] = useState<string>('');
 
+  const { search } = useLocation();
+  const URLParamName = new URLSearchParams(search).get('name');
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
+
   useEffect(() => {
     if (URLRoomName) {
       setRoomName(URLRoomName);
@@ -92,10 +96,28 @@ export default function MenuBar() {
     getToken(name, roomName).then(token => connect(token));
   };
 
+  let menuState = 'form-prompt';
+  if (roomState === 'connected') {
+    menuState = 'connected';
+  } else if (isConnecting) {
+    menuState = 'connecting';
+  } else {
+    if (URLParamName && URLRoomName && !autoLoggingIn) {
+      setAutoLoggingIn(true)
+      menuState = 'connecting';
+      getToken(URLParamName, URLRoomName).then(token => {
+        connect(token)
+        setAutoLoggingIn(false)
+      })
+      window.history.replaceState(null, '', window.encodeURI(window.location.pathname))
+    }
+
+  }
+
   return (
     <AppBar className={classes.container} position="static">
       <Toolbar className={classes.toolbar}>
-        {roomState === 'disconnected' ? (
+        {menuState === 'form-prompt' && (
           <form className={classes.form} onSubmit={handleSubmit}>
             {window.location.search.includes('customIdentity=true') || !user?.displayName ? (
               <TextField
@@ -130,7 +152,8 @@ export default function MenuBar() {
             </Button>
             {(isConnecting || isFetching) && <CircularProgress className={classes.loadingSpinner} />}
           </form>
-        ) : (
+        )}
+        {menuState === 'connected' && (
           <h3>{roomName}</h3>
         )}
         <div className={classes.rightButtonContainer}>

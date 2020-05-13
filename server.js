@@ -34,4 +34,4 @@ if (process.env.NODE_ENV === 'development') {
 
 }
 
-app.listen(8082, () => console.log('token server running on 8082'));
+app.listen(8081, () => console.log('token server running on 8081'));
