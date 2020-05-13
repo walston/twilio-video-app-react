@@ -10,8 +10,6 @@ const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioApiKeySID = process.env.TWILIO_API_KEY_SID;
 const twilioApiKeySecret = process.env.TWILIO_API_KEY_SECRET;
 
-app.use(express.static(path.join(__dirname, 'build')));
-
 app.get('/token', (req, res) => {
   const { identity, roomName } = req.query;
   const token = new AccessToken(twilioAccountSid, twilioApiKeySID, twilioApiKeySecret, {
@@ -24,6 +22,16 @@ app.get('/token', (req, res) => {
   console.log(`issued token for ${identity} in room ${roomName}`);
 });
 
-app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'build/index.html')));
+if (process.env.NODE_ENV === 'development') {
+  const proxy = require('express-http-proxy')
+  app.get('*', proxy('localhost:3000'));
 
-app.listen(8081, () => console.log('token server running on 8081'));
+} else {
+  /**  */
+  console.debug('HELP')
+  app.use(express.static(path.join(__dirname, 'build')));
+  app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'build/index.html')));
+
+}
+
+app.listen(8082, () => console.log('token server running on 8082'));
