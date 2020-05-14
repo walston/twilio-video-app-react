@@ -23,12 +23,9 @@ app.get('/token', (req, res) => {
 });
 
 if (process.env.NODE_ENV === 'development') {
-  const proxy = require('express-http-proxy')
+  const proxy = require('express-http-proxy');
   app.get('*', proxy('localhost:3000'));
-
 } else {
-  /**  */
-  console.debug('HELP')
   app.use(express.static(path.join(__dirname, 'build')));
   app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'build/index.html')));
 
